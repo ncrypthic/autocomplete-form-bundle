@@ -1,0 +1,7 @@
+{% block autocomplete_widget %}
+    {% if form.vars.widget == 'text' %}
+        {{block('form_widget_simple')}}
+    {% else %}
+        {{ block('choice_widget') }}
+    {% endif %}
+{% endblock autocomplete_widget %}
