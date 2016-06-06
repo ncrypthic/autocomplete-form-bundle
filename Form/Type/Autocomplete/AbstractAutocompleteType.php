@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-namespace Ris\AutocompleteFormBundle\Form\Type;
+namespace Ris\AutocompleteFormBundle\Form\Type\Autocomplete;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -15,10 +15,9 @@ use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\Exception\InvalidConfigurationException;
-use Symfony\Component\Form\FormView;
-use Symfony\Component\Form\FormInterface;
-use Doctrine\Bundle\DoctrineBundle\Registry;
+use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\QueryBuilder;
+use Ris\AutocompleteFormBundle\Event\AutocompleteFormEvent;
 use Ris\AutocompleteFormBundle\Exception\InvalidQueryBuilderException;
 
 /**
@@ -29,18 +28,18 @@ use Ris\AutocompleteFormBundle\Exception\InvalidQueryBuilderException;
 abstract class AbstractAutocompleteType extends AbstractType
 {
     /**
-     * @var Entity\Loader\ORMQueryBuilderLoader
+     * @var Loader\ORMQueryBuilderLoader
      */
     private $loader;
     /**
-     * @var Registry
+     * @var ManagerRegistry
      */
     private $registry;
 
-    public function __construct(Registry $register)
+    public function __construct(ManagerRegistry $registry)
     {
-        $this->loader   = new Entity\Loader\ORMQueryBuilderLoader(null);
-        $this->registry = $register;
+        $this->loader   = new Loader\ORMQueryBuilderLoader(null);
+        $this->registry = $registry;
     }
     
     /**
@@ -75,11 +74,6 @@ abstract class AbstractAutocompleteType extends AbstractType
                 array($this, 'preSubmitHandler'));
     }
     
-    public function buildView(FormView $view, FormInterface $form, array $options)
-    {
-        
-    }
-    
     /**
      * Maintain BC
      * 
@@ -96,13 +90,14 @@ abstract class AbstractAutocompleteType extends AbstractType
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(array(
-            'loader'            => $this->loader,
             'model_transformer' => null,
             'view_transformer'  => null,
             'data_property'     => "",
             'max_results'       => 10,
             'query_builder'     => null,
-            'widget'            => 'choice'
+            'widget'            => 'choice',
+            'set_handler'       => function(AutocompleteFormEvent $e){},
+            'submit_handler'    => function(AutocompleteFormEvent $e){},
         ));
         $resolver->setRequired('data_property');
         $resolver->setRequired('query_builder');
@@ -115,9 +110,10 @@ abstract class AbstractAutocompleteType extends AbstractType
     {
         // BC for Symfony < 3
         if (!method_exists('Symfony\Component\Form\AbstractType', 'getBlockPrefix')) {
-            return 'text';
+            return 'entity';
         }
-        return 'entity';
+        
+        return 'Symfony\Bridge\Doctrine\Form\Type\EntityType';
     }
     
     /**
@@ -137,6 +133,11 @@ abstract class AbstractAutocompleteType extends AbstractType
      */
     public function getName()
     {
+        return $this->getBlockPrefix();
+    }
+    
+    public function getBlockPrefix()
+    {
         return 'autocomplete';
     }
     
@@ -144,13 +145,18 @@ abstract class AbstractAutocompleteType extends AbstractType
      * FormEvents::PRE_SET_DATA handler to allow modification of `query_builder`
      * to generate new choice list based on set data
      * 
-     * @param FormEvent $evt
+     * @param FormEvent $e
      * @throws InvalidQueryBuilderException
      */
-    public final function preSetDataHandler(FormEvent $evt)
+    public final function preSetDataHandler(FormEvent $e)
     {
-        $prev = $this->loader->getQueryBuilder();
-        $qb   = $this->onSetData($evt->getData(), $prev);
+        $prev    = $this->loader->getQueryBuilder();
+        $evt     = new AutocompleteFormEvent($prev, $e);
+        $handler = $e->getForm()->getConfig()->getOption('set_handler');
+        $qb      = null;
+        if(is_callable($handler) && $e->getData()) {
+            $qb   = call_user_func_array($handler, array($evt));
+        }
         if($qb instanceof QueryBuilder) {
             $this->loader->setQueryBuilder($qb);
         }
@@ -160,29 +166,20 @@ abstract class AbstractAutocompleteType extends AbstractType
      * FormEvents::PRE_SET_DATA handler to allow modification of `query_builder`
      * to generate new choice list based on submitted data
      * 
-     * @param FormEvent $evt
+     * @param FormEvent $e
      * @throws InvalidQueryBuilderException
      */
-    public final function preSubmitHandler(FormEvent $evt)
+    public final function preSubmitHandler(FormEvent $e)
     {
-        $prev = $this->loader->getQueryBuilder();
-        $qb   = $this->onSubmit($evt->getData(), $prev);
+        $prev    = $this->loader->getQueryBuilder();
+        $evt     = new AutocompleteFormEvent($prev, $e);
+        $handler = $e->getForm()->getConfig()->getOption('submit_handler');
+        $qb      = null;
+        if(is_callable($handler) && $e->getData()) {
+            $qb   = call_user_func_array($handler, array($evt));
+        }
         if($qb instanceof QueryBuilder) {
             $this->loader->setQueryBuilder($qb);
         }
     }
-    
-    /**
-     * @param string $data
-     * @param QueryBuilder $queryBuilder Previously query builder
-     * @return \Doctrine\ORM\QueryBuilder
-     */
-    abstract public function onSetData($data, QueryBuilder $queryBuilder);
-    
-    /**
-     * @param string $data
-     * @param QueryBuilder $queryBuilder Previously query builder
-     * @return \Doctrine\ORM\QueryBuilder
-     */
-    abstract public function onSubmit($data, QueryBuilder $queryBuilder);
 }
