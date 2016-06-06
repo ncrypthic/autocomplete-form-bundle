@@ -5,6 +5,7 @@
         "symfony/framework-standard-edition": "2.8"
     },
     "license": "MIT",
+    "type": "symfony-bundle",
     "authors": [
         {
             "name": "Lim Afriyadi",
