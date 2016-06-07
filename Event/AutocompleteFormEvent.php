@@ -1,6 +1,6 @@
 <?php
 
-namespace Ris\AutocompleteFormBundle\Event;
+namespace LLA\AutocompleteFormBundle\Event;
 
 use Symfony\Component\Form\FormEvent;
 use Doctrine\ORM\QueryBuilder;

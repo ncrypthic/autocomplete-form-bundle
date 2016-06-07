@@ -6,18 +6,18 @@
  * and open the template in the editor.
  */
 
-namespace Ris\AutocompleteFormBundle\Tests\Form\Type;
+namespace LLA\AutocompleteFormBundle\Tests\Form\Type;
 
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\Form\PreloadedExtension;
-use Ris\AutocompleteFormBundle\Test\Helper;
-use Ris\AutocompleteFormBundle\Form\Type\Autocomplete\AutocompleteType;
-use Ris\AutocompleteFormBundle\Tests\Entity\DummyEntity;
+use LLA\AutocompleteFormBundle\Test\Helper;
+use LLA\AutocompleteFormBundle\Form\Type\Autocomplete\AutocompleteType;
+use LLA\AutocompleteFormBundle\Tests\Entity\DummyEntity;
 use Symfony\Component\Form\FormEvents;
-use Ris\AutocompleteFormBundle\Event\AutocompleteFormEvent;
+use LLA\AutocompleteFormBundle\Event\AutocompleteFormEvent;
 use Symfony\Component\Form\ChoiceList\View\ChoiceView;
 
 /**

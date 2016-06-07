@@ -1,6 +1,6 @@
 <?php
 
-namespace Ris\AutocompleteFormBundle\DependencyInjection;
+namespace LLA\AutocompleteFormBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;

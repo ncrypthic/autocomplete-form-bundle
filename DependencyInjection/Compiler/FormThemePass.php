@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-namespace Ris\AutocompleteFormBundle\DependencyInjection\Compiler;
+namespace LLA\AutocompleteFormBundle\DependencyInjection\Compiler;
 
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

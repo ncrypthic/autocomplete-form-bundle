@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-namespace Ris\AutocompleteFormBundle\Tests\Entity;
+namespace LLA\AutocompleteFormBundle\Tests\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 

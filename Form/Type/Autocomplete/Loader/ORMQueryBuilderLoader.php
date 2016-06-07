@@ -5,7 +5,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-namespace Ris\AutocompleteFormBundle\Form\Type\Autocomplete\Loader;
+namespace LLA\AutocompleteFormBundle\Form\Type\Autocomplete\Loader;
 
 use Symfony\Bridge\Doctrine\Form\ChoiceList\EntityLoaderInterface;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;

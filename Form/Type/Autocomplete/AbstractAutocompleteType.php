@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-namespace Ris\AutocompleteFormBundle\Form\Type\Autocomplete;
+namespace LLA\AutocompleteFormBundle\Form\Type\Autocomplete;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -17,8 +17,8 @@ use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\Exception\InvalidConfigurationException;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\QueryBuilder;
-use Ris\AutocompleteFormBundle\Event\AutocompleteFormEvent;
-use Ris\AutocompleteFormBundle\Exception\InvalidQueryBuilderException;
+use LLA\AutocompleteFormBundle\Event\AutocompleteFormEvent;
+use LLA\AutocompleteFormBundle\Exception\InvalidQueryBuilderException;
 
 /**
  * Base class form Autocomplete form type

@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-namespace Ris\AutocompleteFormBundle\Test;
+namespace LLA\AutocompleteFormBundle\Test;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
@@ -32,11 +32,11 @@ class Helper
 
         $config = new \Doctrine\ORM\Configuration();
         $config->setEntityNamespaces(array(
-            'RisAutocompleteFormBundleTestsDoctrine' => 'Ris\AutocompleteFormBundle\Tests\Entity'
+            'RisAutocompleteFormBundleTestsDoctrine' => 'LLA\AutocompleteFormBundle\Tests\Entity'
         ));
         $config->setAutoGenerateProxyClasses(true);
         $config->setProxyDir(\sys_get_temp_dir());
-        $config->setProxyNamespace('Ris\AutocompleteFormBundle\Tests\Doctrine');
+        $config->setProxyNamespace('LLA\AutocompleteFormBundle\Tests\Doctrine');
         $config->setMetadataDriverImpl(new AnnotationDriver(new AnnotationReader()));
         $config->setQueryCacheImpl(new \Doctrine\Common\Cache\ArrayCache());
         $config->setMetadataCacheImpl(new \Doctrine\Common\Cache\ArrayCache());

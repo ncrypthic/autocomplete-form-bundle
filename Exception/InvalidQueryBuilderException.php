@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-namespace Ris\AutocompleteFormBundle\Exception;
+namespace LLA\AutocompleteFormBundle\Exception;
 
 /**
  * Description of InvalidQueryBuilderException

@@ -1,9 +1,9 @@
 <?php
 
-namespace Ris\AutocompleteFormBundle;
+namespace LLA\AutocompleteFormBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
-use Ris\AutocompleteFormBundle\DependencyInjection\Compiler\FormThemePass;
+use LLA\AutocompleteFormBundle\DependencyInjection\Compiler\FormThemePass;
 
 class RisAutocompleteFormBundle extends Bundle
 {

@@ -6,10 +6,10 @@
  * and open the template in the editor.
  */
 
-namespace Ris\AutocompleteFormBundle\Form\Type\Autocomplete;
+namespace LLA\AutocompleteFormBundle\Form\Type\Autocomplete;
 
 use Doctrine\ORM\QueryBuilder;
-use Ris\AutocompleteFormBundle\Event\AutocompleteFormEvent;
+use LLA\AutocompleteFormBundle\Event\AutocompleteFormEvent;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormInterface;
 
