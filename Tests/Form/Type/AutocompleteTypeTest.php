@@ -17,6 +17,7 @@ use LLA\AutocompleteFormBundle\Test\Helper;
 use LLA\AutocompleteFormBundle\Form\Type\Autocomplete\AutocompleteType;
 use LLA\AutocompleteFormBundle\Tests\Entity\DummyEntity;
 use Symfony\Component\Form\FormEvents;
+use Symfony\Component\Form\Test\FormBuilderInterface;
 use LLA\AutocompleteFormBundle\Event\AutocompleteFormEvent;
 use Symfony\Component\Form\ChoiceList\View\ChoiceView;
 
@@ -70,7 +71,7 @@ class AutocompleteTypeTest extends TypeTestCase
     {
         $repo    = $this->em->getRepository(DummyEntity::class);
         $results = $repo->findBy(array(), null, self::MAX_RESULTS);
-        $view    = $this->createAutocompleteTypeForm()->createView();
+        $view    = $this->createAutocompleteForm()->createView();
         $choices = $view->vars['choices'];
         $expected = array();
         foreach($results as $result) {
@@ -85,7 +86,7 @@ class AutocompleteTypeTest extends TypeTestCase
     {
         $data     = 10;
         $expected = $this->em->getRepository(DummyEntity::class)->find($data);
-        $form     = $this->createAutocompleteTypeForm();
+        $form     = $this->createAutocompleteForm();
         $form->setData($expected);
         $view     = $form->createView();
         $this->assertEquals(1, count($view->vars['choices']));
@@ -99,16 +100,73 @@ class AutocompleteTypeTest extends TypeTestCase
         $expected->setId(10)->setName('test 10');
         
         $submittedData = 10;
-        $form = $this->createAutocompleteTypeForm();
+        $form = $this->createAutocompleteForm();
         $form->submit($submittedData);
         
         $this->assertTrue($form->isSynchronized());
         $this->assertEquals($expected, $form->getData());
     }
     
-    private function createAutocompleteTypeForm($maxResults = self::MAX_RESULTS)
+    public function testSetMultipleDataOutOfInitialChoiceList()
+    {
+        $repo = $this->em->getRepository(DummyEntity::class);
+        $data = array($repo->find(1), $repo->find(5));
+        $form = $this->createAutocompleteForm(self::MAX_RESULTS, true);
+        $form->setData($data);
+        $view = $form->createView();
+        $choices = array_keys($view->vars['choices']);
+        $this->assertEquals(array(1, 5), $choices);
+    }
+    
+    public function testSubmitMultipleDataOutOfChoiceList()
+    {
+        $repo = $this->em->getRepository(DummyEntity::class);
+        $qb   = $repo->createQueryBuilder('q');
+        $result = $qb->select('q')->where($qb->expr()->in('q.id', ':ids'))
+                        ->setParameter('ids', array(7, 9))
+                        ->getQuery()
+                        ->getResult();
+        $form = $this->createAutocompleteForm(self::MAX_RESULTS, true);
+        $form->submit(array(7, 9));
+        
+        $this->assertTrue($form->isSynchronized());
+        $expected = new \Doctrine\Common\Collections\ArrayCollection($result);
+        $this->assertEquals($expected, $form->getData());
+    }
+    
+    public function testBuildForm()
     {
         $options = array(
+            'multiple'       => false,
+            'class'          => DummyEntity::class,
+            'choice_label'   => function(DummyEntity $test) {
+                return $test->getId();
+            },
+            'max_results'    => 10,
+            'query_builder'  => function(EntityRepository $repo) {
+                return $repo->createQueryBuilder('q');
+            },
+            'set_handler'    => function(AutocompleteFormEvent $e) {
+                return $e->getQueryBuilder();
+            },
+            'submit_handler' => function(AutocompleteFormEvent $e) {
+                return $e->getQueryBuilder();
+            }
+        );
+        $builder = $this->getMock('Symfony\Component\Form\Test\FormBuilderInterface');
+        /* @var $resolver \Symfony\Component\OptionsResolver\OptionsResolver */
+        $resolver = new \Symfony\Component\OptionsResolver\OptionsResolver();
+        /* @var $builder FormBuilderInterface */
+        $form = new AutocompleteType($this->registry);
+        $form->configureOptions($resolver);
+        $this->assertEquals($form->buildForm($builder, $resolver->resolve($options)), null);
+        $this->assertEquals($form->getName(), 'autocomplete');
+    }
+    
+    public function createAutocompleteForm($maxResults = self::MAX_RESULTS, $multiple = false)
+    {
+        $options = array(
+            'multiple'       => $multiple,
             'class'          => DummyEntity::class,
             'choice_label'   => function(DummyEntity $test) {
                 return $test->getId();
@@ -117,16 +175,34 @@ class AutocompleteTypeTest extends TypeTestCase
             'query_builder'  => function(EntityRepository $repo) {
                 return $repo->createQueryBuilder('q');
             },
-            'set_handler'    => function(AutocompleteFormEvent $e) {
-                return $e->getQueryBuilder()->where('q.id = :id')
-                        ->setParameter('id', $e->getFormEvent()->getData());
+            'set_handler'    => function(AutocompleteFormEvent $e) use($multiple) {
+                $qb = $e->getQueryBuilder();
+                if($multiple) {
+                    $entities = $e->getFormEvent()->getData();
+                    $ids = array();
+                    foreach($entities as $entity) {
+                        array_push($ids, $entity->getId());
+                    }
+                    $qb->where($qb->expr()->in('q.id', ':ids'))
+                        ->setParameter('ids', $ids);
+                } else {
+                    $qb->where('q.id = :id')
+                        ->setParameter('id', $e->getFormEvent()->getData()->getId());
+                }
+                return $qb;
             },
-            'submit_handler' => function(AutocompleteFormEvent $e) {
-                return $e->getQueryBuilder()->where('q.id = :id')
-                        ->setParameter('id', $e->getFormEvent()->getData());
+            'submit_handler' => function(AutocompleteFormEvent $e) use($multiple) {
+                $qb = $e->getQueryBuilder();
+                if($multiple) {
+                    $qb->where($qb->expr()->in('q.id', ':id'));
+                } else {
+                    $qb->where('q.id = :id');
+                }
+                
+                return $qb->setParameter('id', $e->getFormEvent()->getData());
             }
         );
-        
+       
         return $this->factory->create(AutocompleteType::class, null, $options);
     }
     
@@ -136,7 +212,7 @@ class AutocompleteTypeTest extends TypeTestCase
                 ->disableOriginalConstructor()
                 ->getMock();
         $registry->method('getManager')
-            ->with($this->any())
+            ->with($this->isType('string'))
             ->will($this->returnValue($em));
         $registry->method('getManagerForClass')
             ->will($this->returnValue($em));
