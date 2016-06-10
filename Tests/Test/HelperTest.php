@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-namespace Ris\AutocompleteFormBundle\Tests\Test;
+namespace LLA\AutocompleteFormBundle\Tests\Test;
 
 use Symfony\Bundle\FrameworkBundle\Tests\TestCase;
 use Doctrine\ORM\EntityManager;

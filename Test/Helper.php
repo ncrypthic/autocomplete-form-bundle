@@ -32,7 +32,7 @@ class Helper
 
         $config = new \Doctrine\ORM\Configuration();
         $config->setEntityNamespaces(array(
-            'RisAutocompleteFormBundleTestsDoctrine' => 'LLA\AutocompleteFormBundle\Tests\Entity'
+            'LLAAutocompleteFormBundleTestsDoctrine' => 'LLA\AutocompleteFormBundle\Tests\Entity'
         ));
         $config->setAutoGenerateProxyClasses(true);
         $config->setProxyDir(\sys_get_temp_dir());
