@@ -22,7 +22,7 @@ class FormThemePass implements CompilerPassInterface
     {
         $defs = $container->getDefinition('twig');
         $resources = $container->getParameter('twig.form.resources');
-        array_push($resources, realpath(__DIR__.'/../../Resources/views/Form/autocomplete_form.html.twig'));
+        array_push($resources, 'LLAAutocompleteFormBundle:Form:autocomplete_form.html.twig');
         $container->setParameter('twig.form.resources', $resources);
     }
 }
