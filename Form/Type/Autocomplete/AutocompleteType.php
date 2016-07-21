@@ -8,8 +8,6 @@
 
 namespace LLA\AutocompleteFormBundle\Form\Type\Autocomplete;
 
-use Doctrine\ORM\QueryBuilder;
-use LLA\AutocompleteFormBundle\Event\AutocompleteFormEvent;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormInterface;
 
