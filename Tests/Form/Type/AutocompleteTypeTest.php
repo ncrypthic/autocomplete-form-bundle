@@ -13,13 +13,13 @@ use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\Form\PreloadedExtension;
+use Symfony\Component\Form\ChoiceList\ArrayChoiceList;
+use Symfony\Component\Form\Test\FormBuilderInterface;
+use Symfony\Component\Form\ChoiceList\View\ChoiceView;
 use LLA\AutocompleteFormBundle\Test\Helper;
 use LLA\AutocompleteFormBundle\Form\Type\Autocomplete\AutocompleteType;
 use LLA\AutocompleteFormBundle\Tests\Entity\DummyEntity;
-use Symfony\Component\Form\FormEvents;
-use Symfony\Component\Form\Test\FormBuilderInterface;
 use LLA\AutocompleteFormBundle\Event\AutocompleteFormEvent;
-use Symfony\Component\Form\ChoiceList\View\ChoiceView;
 
 /**
  * Description of AutocompleteTypeTest
@@ -76,10 +76,10 @@ class AutocompleteTypeTest extends TypeTestCase
         $expected = array();
         foreach($results as $result) {
             $choice = new ChoiceView($result, $result->getId(), $result->getId());
-            $expected[$result->getId()] = $choice;
+            array_push($expected, $result);
         }
-        $this->assertEquals($expected, $choices);
-        $this->assertEquals(self::MAX_RESULTS, count($choices));
+        $this->assertEquals(new ArrayChoiceList($expected), $choices);
+        $this->assertEquals(self::MAX_RESULTS, count($choices->getChoices()));
     }
     
     public function testSetDataOutOfDefaultList()
@@ -177,15 +177,17 @@ class AutocompleteTypeTest extends TypeTestCase
             },
             'set_handler'    => function(AutocompleteFormEvent $e) use($multiple) {
                 $qb = $e->getQueryBuilder();
-                if($multiple) {
+                if(!$e->getFormEvent()->getData()) {
+                } else if($multiple) {
                     $entities = $e->getFormEvent()->getData();
                     $ids = array();
+                    
                     foreach($entities as $entity) {
                         array_push($ids, $entity->getId());
                     }
                     $qb->where($qb->expr()->in('q.id', ':ids'))
                         ->setParameter('ids', $ids);
-                } else {
+                } else if($e->getFormEvent()->getData()) {
                     $qb->where('q.id = :id')
                         ->setParameter('id', $e->getFormEvent()->getData()->getId());
                 }
