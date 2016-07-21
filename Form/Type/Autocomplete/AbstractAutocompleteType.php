@@ -14,6 +14,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormView;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\Exception\InvalidConfigurationException;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\Form\ChoiceList\Factory\ChoiceListFactoryInterface;
@@ -22,6 +24,7 @@ use Symfony\Component\Form\ChoiceList\Factory\DefaultChoiceListFactory;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Common\Persistence\ObjectManager;
+use Symfony\Component\OptionsResolver\Options;
 use LLA\AutocompleteFormBundle\Event\AutocompleteFormEvent;
 use LLA\AutocompleteFormBundle\Exception\InvalidQueryBuilderException;
 use LLA\AutocompleteFormBundle\Form\Type\Autocomplete\Loader\AutocompleteDoctrineChoiceLoader;
@@ -45,13 +48,20 @@ abstract class AbstractAutocompleteType extends EntityType
      * @var \Symfony\Component\Form\ChoiceList\Factory\ChoiceListFactoryInterface
      */
     private $choiceListFactory;
+    /**
+     * @var \Symfony\Component\Form\ChoiceList\Loader\ChoiceLoaderInterface
+     */
+    private $choiceLoader;
 
     public function __construct(ManagerRegistry $registry, PropertyAccessorInterface $propertyAccessor = null, ChoiceListFactoryInterface $choiceListFactory = null)
     {
-        $this->registry = $registry;
-        $this->choiceListFactory = $choiceListFactory ?: new PropertyAccessDecorator(new DefaultChoiceListFactory(), $propertyAccessor);
-        $this->loader   = new Loader\ORMQueryBuilderLoader(null);
         parent::__construct($registry);
+        $this->registry = $registry;
+        $this->choiceListFactory = $choiceListFactory ?: new PropertyAccessDecorator(
+            new DefaultChoiceListFactory(), $propertyAccessor
+        );
+        $this->loader       = new Loader\ORMQueryBuilderLoader(null);
+        $this->choiceLoader = new AutocompleteDoctrineChoiceLoader($this->choiceListFactory);
     }
     
     /**
@@ -80,12 +90,19 @@ abstract class AbstractAutocompleteType extends EntityType
         if(isset($options['model_transformer']) && is_object($options['view_transformer'])) {
             $builder->addViewTransformer($options['view_transformer']);
         }
-        $choiceLoader = new AutocompleteDoctrineChoiceLoader($this->choiceListFactory, $options['em'], $options['class']);
-        $options['choice_loader'] = $choiceLoader;
         $builder->addEventListener(FormEvents::PRE_SET_DATA,
                 array($this, 'preSetDataHandler'));
         $builder->addEventListener(FormEvents::PRE_SUBMIT, 
                 array($this, 'preSubmitHandler'));
+    }
+    
+    public function buildView(FormView $view, FormInterface $form, array $options)
+    {
+        if($form->getData() === null) {
+            $loader = clone $this->loader;
+            $loader->setQueryBuilder($this->queryBuilder);
+            $view->vars['choices'] = $this->choiceLoader->setEntityLoader($loader)->loadChoiceList();
+        }
     }
     
     /**
@@ -105,6 +122,17 @@ abstract class AbstractAutocompleteType extends EntityType
     {
         parent::configureOptions($resolver);
         $resolver->setDefaults(array(
+            'choice_loader' => function (Options $options) {
+                $idReader = $options['id_reader'] 
+                        ?: new IdReader($options['em'], $options['class']);
+                $this->choiceLoader
+                        ->setObjectManager($options['em'])
+                        ->setClass($options['class'])
+                        ->setIdReader($idReader)
+                        ->setEntityLoader($this->loader);
+                
+                return $this->choiceLoader;
+            },
             'multiple' => false,
             'model_transformer' => null,
             'view_transformer' => null,
@@ -168,14 +196,16 @@ abstract class AbstractAutocompleteType extends EntityType
      */
     public final function preSetDataHandler(FormEvent $e)
     {
-        $qb      = clone $this->queryBuilder;
+        $qb      = $e->getForm()->getConfig()->getOption("query_builder");
         $evt     = new AutocompleteFormEvent($qb, $e);
         $handler = $e->getForm()->getConfig()->getOption('set_handler');
-        if(is_callable($handler) && $e->getData()) {
+        if(is_callable($handler)) {
             $qb   = call_user_func_array($handler, array($evt));
         }
         if($qb instanceof QueryBuilder) {
-             $this->loader->setQueryBuilder($qb);
+            $loader = clone $this->loader;
+            $loader->setQueryBuilder($qb);
+            $this->choiceLoader->setEntityLoader($loader);
         }
     }
     
@@ -188,14 +218,15 @@ abstract class AbstractAutocompleteType extends EntityType
      */
     public final function preSubmitHandler(FormEvent $e)
     {
-        $qb      = clone $this->queryBuilder;
+        $qb      = $e->getForm()->getConfig()->getOption("query_builder");
         $evt     = new AutocompleteFormEvent($qb, $e);
         $handler = $e->getForm()->getConfig()->getOption('submit_handler');
-        if(is_callable($handler) && $e->getData()) {
-            $qb   = call_user_func_array($handler, array($evt));
+        if(is_callable($handler)) {
+            $qb  = call_user_func_array($handler, array($evt));
         }
         if($qb instanceof QueryBuilder) {
             $this->loader->setQueryBuilder($qb);
+            $this->choiceLoader->setEntityLoader($this->loader);
         }
     }
 }
