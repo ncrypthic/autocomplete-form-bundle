@@ -55,7 +55,7 @@ You can use the form as normal form usage. See [FormComponent](http://symfony.co
 // ...
 class TestController extends Controller
 {
-    public function registerBundles()
+    public function indexAction()
     {
         // ...
         $form = $this->createForm('form_name', 'autocomplete', array(
