@@ -23,20 +23,25 @@ use Symfony\Component\Form\ChoiceList\Loader\ChoiceLoaderInterface;
 class AutocompleteDoctrineChoiceLoader implements ChoiceLoaderInterface
 {
     private $class;
-    private $objectLoader;
+    private $entityLoader;
     private $manager;
     private $factory;
     private $idReader;
     
-    public function __construct(ChoiceListFactoryInterface $factory, ObjectManager $manager = null, $class = null, IdReader $idReader = null, EntityLoaderInterface &$objectLoader = null)
+    public function __construct(ChoiceListFactoryInterface $factory, ObjectManager $manager = null, $class = null, IdReader $idReader = null, EntityLoaderInterface &$entityLoader = null)
     {
         $this->class = $class;
         $this->manager = $manager;
-        $this->objectLoader = $objectLoader;
+        $this->entityLoader = $entityLoader;
         $this->factory = $factory;
         $this->idReader = $idReader;
     }
     
+    /**
+     * 
+     * @param ObjectManager $manager
+     * @return \LLA\AutocompleteFormBundle\Form\Type\Autocomplete\Loader\AutocompleteDoctrineChoiceLoader
+     */
     public function setObjectManager(ObjectManager $manager)
     {
         $this->manager = $manager;
@@ -44,27 +49,49 @@ class AutocompleteDoctrineChoiceLoader implements ChoiceLoaderInterface
         return $this;
     }
     
+    /**
+     * {@inheritdoc}
+     */
     public function setClass($class)
     {
         $this->class = $class;
         return $this;
     }
     
-    public function setEntityLoader(EntityLoaderInterface $objectLoader)
+    /**
+     * {@inheritdoc}
+     */
+    public function setEntityLoader(EntityLoaderInterface $entityLoader)
     {
-        $this->objectLoader = $objectLoader;
+        $this->entityLoader = $entityLoader;
         return $this;
     }
     
+    /**
+     * Get entity loader
+     * 
+     * @return EntityLoaderInterface
+     */
+    public function getObjectLoader()
+    {
+        return $this->entityLoader;
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
     public function setIdReader(IdReader $idReader)
     {
         $this->idReader = $idReader;
         return $this;
     }
     
+    /**
+     * {@inheritdoc}
+     */
     public function loadChoiceList($value = null)
     {
-        $objects = $this->objectLoader->getEntities();
+        $objects = $this->entityLoader->getEntities();
         return $this->factory->createListFromChoices($objects, $value);
     }
     
@@ -116,8 +143,8 @@ class AutocompleteDoctrineChoiceLoader implements ChoiceLoaderInterface
 
         // Optimize performance in case we have an object loader and
         // a single-field identifier
-        if (null === $value && $this->objectLoader && $this->idReader->isSingleId()) {
-            $unorderedObjects = $this->objectLoader->getEntitiesByIds($this->idReader->getIdField(), $values);
+        if (null === $value && $this->entityLoader && $this->idReader->isSingleId()) {
+            $unorderedObjects = $this->entityLoader->getEntitiesByIds($this->idReader->getIdField(), $values);
             $objectsById = array();
             $objects = array();
 
