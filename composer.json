@@ -2,7 +2,7 @@
     "name": "lla/autocomplete-form-bundle",
     "description": "Extend Doctrine's entity form type for autocompletion support via form event and custom entity loader exposed as 'autocomplete' form type",
     "require": {
-        "symfony/framework-standard-edition": "2.8.*"
+        "symfony/framework-standard-edition": "~2.8"
     },
     "license": "MIT",
     "type": "symfony-bundle",
